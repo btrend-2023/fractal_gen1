@@ -9,7 +9,7 @@ import fractal_lib
 def create_gui():
     root = tk.Tk()
     root.title('Mandelbrot Fractal')
-
+    previous_views = []
     canvas_width = 800
     canvas_height = 600
     canvas = tk.Canvas(root, width=canvas_width, height=canvas_height)
@@ -65,8 +65,27 @@ def create_gui():
         canvas.delete('selection_rectangle')
         canvas.create_rectangle(start_x, start_y, event.x, event.y, outline='white', tags='selection_rectangle')
 
+    def previous_view():
+        nonlocal x_start, y_start, x_end, y_end, previous_views
+        #print('previous_vies=',previous_views)
+        # Check if there are previous views available
+        if len(previous_views) > 1:
+            # Remove the current view from the list
+            previous_views.pop()
+
+            # Get the previous view from the list
+            x_start, y_start, x_end, y_end = previous_views[-1]
+
+            # Redraw the fractal
+            canvas.delete('all')
+            fractal_lib.draw_fractal_image(canvas, x_start, y_start, x_end, y_end, max_iter)
+
     def on_release(event):
-        nonlocal x_start, y_start, x_end, y_end, start_x, start_y
+        #nonlocal x_start, y_start, x_end, y_end, start_x, start_y
+        nonlocal x_start, y_start, x_end, y_end, start_x, start_y, previous_views
+
+        # Save the current view to the list of previous views
+        previous_views.append((x_start, y_start, x_end, y_end))
         # 取得使用者選擇的區域範圍
         x1 = min(start_x, event.x)
         y1 = min(start_y, event.y)
@@ -107,7 +126,8 @@ def create_gui():
 
     save_button = tk.Button(root, text="Save", command=save_button_click)
     save_button.pack()
-
+    previous_button = tk.Button(root, text="Previous View", command=previous_view)
+    previous_button.pack()
 
     root.mainloop()
 
