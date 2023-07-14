@@ -16,14 +16,16 @@ def create_gui():
     canvas.pack()
 
     # 設定Mandelbrot集合的區域範圍
-    x_start, y_start, x_end, y_end = -2, -1.5, 1, 1.5
+    x_start, y_start, x_end, y_end = -2, -1.5, 1.0, 1.5
     max_iter = 256
     #fractal_lib.draw_fractal(canvas, x_start, y_start, x_end, y_end, max_iter)
     #fractal_lib.draw_mandelbrot(canvas, x_start, y_start, x_end, y_end, max_iter)
     fractal_lib.draw_fractal_image(canvas, x_start, y_start, x_end, y_end, max_iter)
-    #x_start, y_start, x_end, y_end = -2, -2, 2, 2  # Initial region to display
-    #max_iter = 256
+    # 設定Julia_set集合的區域範圍
+    c_real, c_imag = -0.7, 0.27
+
     #draw_julia(canvas, x_start, y_start, x_end, y_end, max_iter)
+    #fractal_lib.draw_julia_image(canvas, x_start, y_start, x_end, y_end, c_real, c_imag, max_iter)
     # 紀錄使用者選擇的區域起始位置
     '''
     # Set the initial triangle coordinates
@@ -69,9 +71,9 @@ def create_gui():
         nonlocal x_start, y_start, x_end, y_end, previous_views
         #print('previous_vies=',previous_views)
         # Check if there are previous views available
-        if len(previous_views) > 1:
+        if len(previous_views) >= 1:
             # Remove the current view from the list
-            previous_views.pop()
+            #previous_views.pop()
 
             # Get the previous view from the list
             x_start, y_start, x_end, y_end = previous_views[-1]
@@ -79,7 +81,8 @@ def create_gui():
             # Redraw the fractal
             canvas.delete('all')
             fractal_lib.draw_fractal_image(canvas, x_start, y_start, x_end, y_end, max_iter)
-
+            #fractal_lib.draw_julia_image(canvas, x_start, y_start, x_end, y_end, c_real, c_imag, max_iter)
+            previous_views.pop()
     def on_release(event):
         #nonlocal x_start, y_start, x_end, y_end, start_x, start_y
         nonlocal x_start, y_start, x_end, y_end, start_x, start_y, previous_views
@@ -104,9 +107,11 @@ def create_gui():
 
         # 重繪碎形
         canvas.delete('all')
+        #print(f'x_start={x_start}, x_end={x_end}, y_start={y_start}, y_end={y_end}')
         #fractal_lib.draw_fractal(canvas, x_start, y_start, x_end, y_end, max_iter)
         #fractal_lib.draw_mandelbrot(canvas, x_start, y_start, x_end, y_end, max_iter)
         fractal_lib.draw_fractal_image(canvas, x_start, y_start, x_end, y_end, max_iter)
+        #fractal_lib.draw_julia_image(canvas, x_start, y_start, x_end, y_end, c_real, c_imag, max_iter)
         # Set the parameters for the Julia Set
         #c_real, c_imag = -0.7, 0.27
         #max_iter = 100
