@@ -257,8 +257,8 @@ def draw_gravity_image(canvas, x_start, y_start, x_end, y_end, max_iter):
     x, y = np.meshgrid(x, y)
     #w = np.random.randint(0,255,(height, width))
     #w = np.random.random((height, width))
-    kx = 10*(x_end-x_start)/width
-    ky = 10*(y_end-y_start)/height
+    kx = 1*(x_end-x_start)/width
+    ky = 1*(y_end-y_start)/height
     wx = np.random.random(width)*kx
     wy = np.random.random(height)*ky
     wx, wy = np.meshgrid(wx, wy)
