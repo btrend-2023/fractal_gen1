@@ -7,13 +7,43 @@ from PIL import ImageTk
 def mandelbrot(c_real, c_imag, max_iter):
     z_real = 0
     z_imag = 0
+    power = 2
     n = 0
     while z_real * z_real + z_imag * z_imag <= 4 and n < max_iter:
-        new_real = z_real * z_real - z_imag * z_imag + c_real
+        # ******** original formula **********
+        #new_real = z_real * z_real - z_imag * z_imag + c_real
+        #new_imag = 2 * z_real * z_imag + c_imag
+        # ******** modified formula **********
+        new_real = z_real ** power - z_imag ** power + c_real
         new_imag = 2 * z_real * z_imag + c_imag
+        #z_real, z_imag = z_real ** 2 - z_imag ** 2 + c_real, 2 * z_real * z_imag + c_imag
+
         z_real = new_real
         z_imag = new_imag
         n += 1
+    return n
+
+@jit(nopython=True)
+def gravity(c_real, c_imag, wx,wy, max_iter):
+    z_real = 0
+    z_imag = 0
+    power = 2
+    n = 0
+    #wx = weight*4
+    while z_real * z_real + z_imag * z_imag <= 4 and n < max_iter:
+        # ******** original formula **********
+        #new_real = z_real * z_real - z_imag * z_imag + c_real
+        #new_imag = 2 * z_real * z_imag + c_imag
+        # ******** modified formula **********
+        new_real = z_real ** power - z_imag ** power + c_real+wx
+        new_imag = 2 * z_real * z_imag + c_imag+ wy
+        #z_real, z_imag = z_real ** 2 - z_imag ** 2 + c_real, 2 * z_real * z_imag + c_imag
+
+        z_real = new_real
+        z_imag = new_imag
+        n += 1
+
+    #n = weight
     return n
 
 def draw_mandelbrot(canvas, x_start, y_start, x_end, y_end, max_iter):
@@ -126,6 +156,45 @@ def draw_julia(canvas, x_start, y_start, x_end, y_end, max_iter):
     for i in prange(width):
         for j in prange(height):
             canvas.create_rectangle(i, j, i + 1, j + 1, fill=f'#{r[j, i]:02x}{g[j, i]:02x}{b[j, i]:02x}', outline='')
+
+def draw_julia_image(canvas, x_start, y_start, x_end, y_end, c_real, c_imag, max_iter):
+    width = canvas.winfo_reqwidth()
+    height = canvas.winfo_reqheight()
+
+    x = np.linspace(x_start, x_end, width)
+    y = np.linspace(y_start, y_end, height)
+    x, y = np.meshgrid(x, y)
+
+    # 使用 numpy.vectorize 讓函數支援向量化運算
+    julia_vectorized = np.vectorize(julia)
+
+    # 進行並行計算
+    result = julia_vectorized(x, y, c_real, c_imag, max_iter)
+
+    # 將收斂值轉換成顏色
+    r = (result % 256)
+    g = ((result * 3) % 256)
+    b = ((result * 5) % 256)
+
+    # 建立空白圖像
+    image = Image.new("RGB", (width, height))
+
+    # 將收斂值轉換成顏色並設置像素
+    for i in range(width):
+        for j in range(height):
+            color = (r[j, i], g[j, i], b[j, i])
+            image.putpixel((i, j), color)
+
+    # 將圖像轉換為 Tkinter 可顯示的格式
+    tk_image = ImageTk.PhotoImage(image)
+
+    # 在 Canvas 上顯示圖像
+    canvas.create_image(0, 0, anchor="nw", image=tk_image)
+
+    # 設定 Canvas 的圖像參考，避免圖像被垃圾回收
+    canvas.image = tk_image
+
+
 def draw_sierpinski(canvas, x1, y1, x2, y2, x3, y3, depth):
     if depth == 0:
         canvas.create_polygon(x1, y1, x2, y2, x3, y3, fill='black', outline='white')
@@ -179,19 +248,26 @@ def draw_fractal_image(canvas, x_start, y_start, x_end, y_end, max_iter):
     # 設定Canvas的圖像參考，避免圖像被垃圾回收
     canvas.image = tk_image
 
-def draw_fractal_imagex(canvas, x_start, y_start, x_end, y_end, max_iter):
+def draw_gravity_image(canvas, x_start, y_start, x_end, y_end, max_iter):
     width = canvas.winfo_reqwidth()
     height = canvas.winfo_reqheight()
 
     x = np.linspace(x_start, x_end, width)
     y = np.linspace(y_start, y_end, height)
     x, y = np.meshgrid(x, y)
+    #w = np.random.randint(0,255,(height, width))
+    #w = np.random.random((height, width))
+    kx = 10*(x_end-x_start)/width
+    ky = 10*(y_end-y_start)/height
+    wx = np.random.random(width)*kx
+    wy = np.random.random(height)*ky
+    wx, wy = np.meshgrid(wx, wy)
     # 使用 numpy.vectorize 讓函數支援向量化運算
-    mandelbrot_vectorized = np.vectorize(mandelbrot)
+    gravity_vectorized = np.vectorize(gravity)
 
     # 進行並行計算
-    result = mandelbrot_vectorized(x, y, max_iter)
-
+    result = gravity_vectorized(x, y, wx, wy, max_iter)
+    #result = w
     # 將收斂值轉換成顏色
     r = (result % 256)
     g = ((result * 3) % 256)
@@ -200,13 +276,12 @@ def draw_fractal_imagex(canvas, x_start, y_start, x_end, y_end, max_iter):
     # 建立空白圖像
     image = Image.new("RGB", (width, height))
 
-    # 將收斂值轉換成顏色並設置像素
-    pixel_colors = np.dstack((r, g, b)).reshape(width * height, 3)
-
-    for i, (r_val, g_val, b_val) in enumerate(pixel_colors):
-        x = i // height
-        y = i % height
-        image.putpixel((x, y), (int(r_val), int(g_val), int(b_val)))
+    # 繪製每個像素
+    for i in range(width):
+        for j in range(height):
+            # 將收斂值轉換成顏色並設置像素
+            pixel_color = (r[j, i], g[j, i], b[j, i])
+            image.putpixel((i, j), pixel_color)
 
     # 將圖像轉換為Tkinter可顯示的格式
     tk_image = ImageTk.PhotoImage(image)
